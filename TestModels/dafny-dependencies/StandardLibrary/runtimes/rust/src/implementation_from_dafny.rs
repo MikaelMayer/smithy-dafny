@@ -816,6 +816,7 @@ pub mod r#_StandardLibrary_Compile {
         }
     }
     pub fn SeqToArray<_T: ::dafny_runtime::DafnyType>(s: &::dafny_runtime::Sequence<_T>) -> *mut [_T] {
+      let mut a: *mut [_T] = ::std::ptr::null_mut::<[_T; 0]>();
       let mut _init0: ::std::rc::Rc<dyn ::std::ops::Fn(&::dafny_runtime::DafnyInt) -> _T> = {
           let s: ::dafny_runtime::Sequence<_T> = s.clone();
           ({
@@ -824,13 +825,26 @@ pub mod r#_StandardLibrary_Compile {
                             s.get(i)
                             })})
           };
-      ::dafny_runtime::array::initialize(&s.cardinality(), _init0)
+          let _n0 = s.cardinality().as_usize();
+          let mut _nw0: *mut [::std::mem::MaybeUninit<_T>] = ::dafny_runtime::array::placebos_usize::<_T>(_n0);
+          for __idx0 in 0.._n0 {
+            ::dafny_runtime::modify!(_nw0)[__idx0] = ::std::mem::MaybeUninit::new((&_init0)(&::dafny_runtime::int!(__idx0)));
+          }
+          let mut _nw0 = ::dafny_runtime::array::construct(_nw0);
+          a =_nw0;
+          return a;
     }
     pub fn LexicographicLessOrEqual<_T: ::dafny_runtime::DafnyTypeEq>(a: &::dafny_runtime::Sequence<_T>, b: &::dafny_runtime::Sequence<_T>, less: &::std::rc::Rc<dyn ::std::ops::Fn(&_T, &_T) -> bool>) -> bool {
-      Self::LexicographicLessOrEqualAux(a, b, less, &::dafny_runtime::int!(0))
+      return ::dafny_runtime::BoundedPool::exists(&::dafny_runtime::Range(::dafny_runtime::int!(0), a.cardinality() + ::dafny_runtime::int!(1)), {
+          let a = a.clone();
+          let b = b.clone();
+          let less = less.clone();
+          ::std::rc::Rc::new(move|k|
+          Self::LexicographicLessOrEqualAux(&a, &b, &less, k))
+      });
     }
     pub fn LexicographicLessOrEqualAux<_T: ::dafny_runtime::DafnyTypeEq>(a: &::dafny_runtime::Sequence<_T>, b: &::dafny_runtime::Sequence<_T>, less: &::std::rc::Rc<dyn ::std::ops::Fn(&_T, &_T) -> bool>, lengthOfCommonPrefix: &super::_System::nat) -> bool {
-      lengthOfCommonPrefix.clone() <= b.cardinality() && ::dafny_runtime::Forall::forall(&::dafny_runtime::Range(::dafny_runtime::int!(0), lengthOfCommonPrefix.clone()), {
+      lengthOfCommonPrefix.clone() <= b.cardinality() && ::dafny_runtime::BoundedPool::forall(&::dafny_runtime::Range(::dafny_runtime::int!(0), lengthOfCommonPrefix.clone()), {
         let a = a.clone();
         let b = b.clone();
         ::std::rc::Rc::new(move |i| a.get(i) == b.get(i))}) && (lengthOfCommonPrefix.clone() == a.cardinality() || lengthOfCommonPrefix.clone() < b.cardinality() && ((less(&a.get(lengthOfCommonPrefix), &b.get(lengthOfCommonPrefix)))))
@@ -867,7 +881,7 @@ pub mod r#_StandardLibrary_Compile {
     }
     pub fn IsMinimum<_T: ::dafny_runtime::DafnyTypeEq>(a: &::dafny_runtime::Sequence<_T>, s: &::dafny_runtime::Set<::dafny_runtime::Sequence<_T>>, less: &::std::rc::Rc<dyn ::std::ops::Fn(&_T, &_T) -> bool>) -> bool {
       s.contains(a) && 
-      ::dafny_runtime::Forall::forall(s, {
+      ::dafny_runtime::BoundedPool::forall(s, {
         let a = a.clone();
         let less = less.clone();
         ::std::rc::Rc::new(move |z| Self::LexicographicLessOrEqual(&a, z, &less))

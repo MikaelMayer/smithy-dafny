@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 use std::{any::Any, borrow::Borrow, cell::{RefCell, UnsafeCell}, cmp::Ordering, collections::{HashMap, HashSet}, fmt::{Debug, Display, Formatter}, hash::{Hash, Hasher}, mem, ops::{Add, Deref, Div, Mul, Neg, Rem, Sub}, rc::Rc};
-use num::{bigint::ParseBigIntError, Integer, Num, One, Signed};
+use num::{bigint::ParseBigIntError, Bounded, Integer, Num, One, Signed};
 pub use once_cell::unsync::Lazy;
 pub use mem::MaybeUninit;
 
@@ -195,8 +195,11 @@ pub struct DafnyInt {
 }
 
 impl DafnyInt {
-    fn new(data: Rc<BigInt>) -> DafnyInt {
+    pub fn new(data: Rc<BigInt>) -> DafnyInt {
         DafnyInt{data}
+    }
+    pub fn as_usize(&self) -> usize {
+        self.to_usize().unwrap()
     }
 }
 
@@ -2168,15 +2171,106 @@ macro_rules! int {
 // Arrays
 //////////
 
-// An Dafny array is a zero-cost abstraction over a pointer on a native array
-
-// array![1, 2, 3] create a Dafny array
+// An 1-dimensional Dafny array is a zero-cost abstraction over a pointer on a native array
 #[macro_export]
 macro_rules! array {
     ($($x:expr), *) => {
         array::from_native(Box::new([$($x), *]))
     }
 }
+
+pub struct Array2<T>{
+    length1: usize,
+    data: Box<[Box<[T]>]>
+}
+impl <T> Array2<T> {
+    #[inline]
+    pub fn length0(&self) -> DafnyInt {
+        DafnyInt::from(self.length0_usize())
+    }
+    #[inline]
+    pub fn length0_usize(&self) -> usize {
+        self.data.len()
+    }
+    #[inline]
+    pub fn length1(&self) -> DafnyInt {
+        DafnyInt::from(self.length1_usize())
+    }
+    #[inline]
+    pub fn length1_usize(&self) -> usize {
+        self.length1
+    }
+    
+    pub fn placebos_usize(length0: usize, length1: usize) -> *mut Array2<MaybeUninit<T>> {
+        Box::into_raw(Box::new(Array2 {
+            length1: length1,
+            data: 
+              array::initialize_box_usize(length0, {
+                Rc::new(move |_| array::placebos_box_usize::<T>(length1))
+              })
+        }))
+    }
+    pub fn placebos(length0: &DafnyInt, length1: &DafnyInt) -> *mut Array2<MaybeUninit<T>> {
+        Self::placebos_usize(length0.as_usize(), length1.as_usize())
+    }
+    // Once all the elements have been initialized, transform the signature of the pointer
+    pub fn construct(p: *mut Array2<MaybeUninit<T>>) -> *mut Array2<T> {
+        unsafe {std::mem::transmute(p)}
+    }
+}
+
+pub struct Array3<T>{
+    length1: usize,
+    length2: usize,
+    data: Box<[Box<[Box<[T]>]>]>
+}
+impl <T> Array3<T> {
+    #[inline]
+    pub fn length0(&self) -> DafnyInt {
+        DafnyInt::from(self.length0_usize())
+    }
+    #[inline]
+    pub fn length0_usize(&self) -> usize {
+        self.data.len()
+    }
+    #[inline]
+    pub fn length1(&self) -> DafnyInt {
+        DafnyInt::from(self.length1_usize())
+    }
+    #[inline]
+    pub fn length1_usize(&self) -> usize {
+        self.length1
+    }
+    #[inline]
+    pub fn length2(&self) -> DafnyInt {
+        DafnyInt::from(self.length2_usize())
+    }
+    #[inline]
+    pub fn length2_usize(&self) -> usize {
+        self.length2
+    }
+    
+    pub fn placebos_usize(length0: usize, length1: usize, length2: usize) -> *mut Array3<MaybeUninit<T>> {
+        Box::into_raw(Box::new(Array3 {
+            length1: length1,
+            length2: length2,
+            data:
+              array::initialize_box_usize(length0, {
+                Rc::new(move |_| array::initialize_box_usize(length1, {
+                    Rc::new(move |_| array::placebos_box_usize::<T>(length2))
+                }))
+              })
+        }))
+    }
+    pub fn placebos(length0: &DafnyInt, length1: &DafnyInt, length2: &DafnyInt) -> *mut Array3<MaybeUninit<T>> {
+        Self::placebos_usize(length0.as_usize(), length1.as_usize(), length2.as_usize())
+    }
+    // Once all the elements have been initialized, transform the signature of the pointer
+    pub fn construct(p: *mut Array3<MaybeUninit<T>>) -> *mut Array3<T> {
+        unsafe {std::mem::transmute(p)}
+    }
+}
+
 pub mod array {
     use std::{
         boxed::Box,
@@ -2185,6 +2279,7 @@ pub mod array {
     };
     use num::ToPrimitive;
     use super::DafnyInt;
+    use std::mem::MaybeUninit;
     #[inline]
     pub fn from_native<T>(v: Box<[T]>) -> *mut [T] {
         Box::into_raw(v)
@@ -2200,19 +2295,49 @@ pub mod array {
         }
         from_vec(v)
     }
+
+    pub fn placebos<T>(n: &DafnyInt) -> *mut [MaybeUninit<T>] {
+        placebos_usize(n.as_usize())
+    }
+    pub fn placebos_usize<T>(n: usize) -> *mut [MaybeUninit<T>] {
+        Box::into_raw(placebos_box_usize(n))
+    }
+    // Once all the elements have been initialized, transform the signature of the pointer
+    pub fn construct<T>(p: *mut [MaybeUninit<T>]) -> *mut [T] {
+        unsafe {std::mem::transmute(p)}
+    }
+
+    pub fn placebos_box<T>(n: &DafnyInt) -> Box<[MaybeUninit<T>]> {
+        placebos_box_usize(n.to_usize().unwrap())
+    }
+    pub fn placebos_box_usize<T>(n_usize: usize) -> Box<[MaybeUninit<T>]> {
+        let mut v = Vec::with_capacity(n_usize);
+        for _i in 0..n_usize {
+            v.push(MaybeUninit::<T>::uninit());
+        }
+        v.into_boxed_slice()
+    }
+
     pub fn initialize<T>(n: &DafnyInt, initializer: Rc<dyn Fn(&DafnyInt) -> T>) -> *mut [T] {
-        let n_usize = n.to_usize().unwrap();
+        Box::into_raw(initialize_box(n, initializer))
+    }
+    
+    pub fn initialize_box<T>(n: &DafnyInt, initializer: Rc<dyn Fn(&DafnyInt) -> T>) -> Box<[T]> {
+        initialize_box_usize(n.to_usize().unwrap(), initializer)
+    }
+    pub fn initialize_box_usize<T>(n_usize: usize, initializer: Rc<dyn Fn(&DafnyInt) -> T>) -> Box<[T]> {
         let mut v = Vec::with_capacity(n_usize);
         for i in 0..n_usize {
             v.push(initializer(&int!(i)));
         }
-        from_vec(v)
+        v.into_boxed_slice()
     }
-    
+
+
     #[inline]
     pub fn length_usize<T>(this: *mut [T]) -> usize {
       // safety: Dafny won't call this function unless it can guarantee the array is still allocated
-      unsafe{&*this}.len()
+      super::read!(this).len()
     }
     #[inline]
     pub fn length<T>(this: *mut [T]) -> DafnyInt {
@@ -2273,11 +2398,41 @@ impl <T> NontrivialDefault for *mut T {
 
 // BoundedPools with methods such as forall, exists, iter.
 
-pub trait Forall<T> {
+pub trait BoundedPool<T: 'static> {
     // Takes ownership of the function because otherwise it's hard to
     // generate code to create a function and borrow it immediately
     // without assigning it to a variable first
     fn forall(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool;
+    fn exists(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool;
+    fn clone_box(&self) -> Box<dyn BoundedPool<T>>;
+    fn filter<'a>(&self, f: Rc<dyn Fn(&T) -> bool>) -> Box<dyn BoundedPool<T>> {
+        Box::new(FilterPool::<T> {
+            b: self.clone_box(),
+            filterer: f,
+        })
+    }
+}
+
+pub struct FilterPool<T>{
+    b: Box<dyn BoundedPool<T>>,
+    filterer: Rc<dyn Fn(&T) -> bool>
+}
+impl <T: 'static> BoundedPool<T> for FilterPool<T> {
+    fn forall(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        let filterer = self.filterer.clone();
+        self.b.forall(Rc::new(move |x: &T| !filterer.as_ref()(x) || f(x)))
+    }
+    fn exists(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        let filterer = self.filterer.clone();
+        self.b.exists(Rc::new(move |x: &T| filterer.as_ref()(x) && f(x)))
+    }
+    
+    fn clone_box(&self) -> Box<dyn BoundedPool<T>> {
+        Box::new(FilterPool::<T> {
+            b: self.b.clone_box(),
+            filterer: self.filterer.clone(),
+        })
+    }
 }
 
 pub struct Range(pub DafnyInt, pub DafnyInt);
@@ -2288,7 +2443,7 @@ impl Range {
     }
 }
 
-impl Forall<DafnyInt> for Range {
+impl BoundedPool<DafnyInt> for Range {
     fn forall(&self, f: Rc<dyn Fn(&DafnyInt) -> bool>) -> bool {
         let mut i: DafnyInt = self.0.clone();
         while i < self.1.clone() {
@@ -2299,9 +2454,23 @@ impl Forall<DafnyInt> for Range {
         }
         true
     }
+    fn exists(&self, f: Rc<dyn Fn(&DafnyInt) -> bool>) -> bool {
+        let mut i: DafnyInt = self.0.clone();
+        while i < self.1.clone() {
+            if f(&i) {
+                return true;
+            }
+            i = i + int!(1);
+        }
+        false
+    }
+    
+    fn clone_box(&self) -> Box<dyn BoundedPool<DafnyInt>> {
+        Box::new(Range(self.0.clone(), self.1.clone()))
+    }
 }
 
-impl <V: DafnyTypeEq> Forall<V> for Sequence<V> {
+impl <V: DafnyTypeEq> BoundedPool<V> for Sequence<V> {
     fn forall(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
         let a = self.to_array();
         let col = a.iter();
@@ -2312,9 +2481,23 @@ impl <V: DafnyTypeEq> Forall<V> for Sequence<V> {
         }
         true
     }
+    fn exists(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
+        let a = self.to_array();
+        let col = a.iter();
+        for v in col {
+            if f(v) {
+                return true;
+            }
+        }
+        false
+    }
+    
+    fn clone_box(&self) -> Box<dyn BoundedPool<V>> {
+        todo!()
+    }
 }
 
-impl <V: DafnyTypeEq> Forall<V> for Set<V> {
+impl <V: DafnyTypeEq> BoundedPool<V> for Set<V> {
     fn forall(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
         let col = self.data.iter();
         for v in col {
@@ -2323,6 +2506,19 @@ impl <V: DafnyTypeEq> Forall<V> for Set<V> {
             }
         }
         true
+    }
+    fn exists(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
+        let col = self.data.iter();
+        for v in col {
+            if f(v) {
+                return true;
+            }
+        }
+        false
+    }
+    
+    fn clone_box(&self) -> Box<dyn BoundedPool<V>> {
+        todo!()
     }
 }
 
