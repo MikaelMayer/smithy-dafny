@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests;
 use std::{any::Any, borrow::Borrow, cell::{RefCell, UnsafeCell}, cmp::Ordering, collections::{HashMap, HashSet}, fmt::{Debug, Display, Formatter}, hash::{Hash, Hasher}, mem, ops::{Add, Deref, Div, Mul, Neg, Rem, Sub}, rc::Rc};
-use num::{bigint::ParseBigIntError, Bounded, Integer, Num, One, Signed};
+use num::{bigint::ParseBigIntError, Integer, Num, One, Signed};
 pub use once_cell::unsync::Lazy;
 pub use mem::MaybeUninit;
 
@@ -42,8 +42,8 @@ pub mod dafny_runtime_conversions {
     pub type DafnyCharUTF16 = crate::DafnyCharUTF16;
     pub type DafnyClass<T> = *mut T;
     pub type DafnyArray<T> = *mut [T];
-    pub type DafnyArray2<T> = *mut [DafnyArray<T>];
-    pub type DafnyArray3<T> = *mut [DafnyArray2<T>];
+    pub type DafnyArray2<T> = *mut crate::Array2<T>;
+    pub type DafnyArray3<T> = *mut crate::Array3<T>;
 
     use num::BigInt;
     use num::ToPrimitive;
@@ -53,9 +53,9 @@ pub mod dafny_runtime_conversions {
     use std::rc::Rc;
     use std::hash::Hash;
 
-    // Conversion to and from Dafny classes
+    // Conversion to and from Dafny classes. All these methods take ownership of the class.
     pub unsafe fn dafny_class_to_struct<T: Clone>(ptr: DafnyClass<T>) -> T {
-        ptr.as_ref().unwrap().clone()
+        *dafny_class_to_boxed_struct(ptr)
     }
     pub unsafe fn dafny_class_to_boxed_struct<T: Clone>(ptr: DafnyClass<T>) -> Box<T> {
         Box::from_raw(ptr)
@@ -65,6 +65,17 @@ pub mod dafny_runtime_conversions {
     }
     pub fn boxed_struct_to_dafny_class<T>(t: Box<T>) -> DafnyClass<T> {
         Box::into_raw(t)
+    }
+
+    // Conversions to and from Dafny arrays. They all take ownership
+    pub unsafe fn dafny_array_to_vec<T: Clone>(ptr: DafnyArray<T>) -> Vec<T> {
+        ptr.as_ref().unwrap().to_vec()
+    }
+    pub fn vec_to_dafny_array<T: Clone>(array: Vec<T>) -> DafnyArray<T> {
+        Box::into_raw(array.into_boxed_slice())
+    }
+    pub unsafe fn dafny_array2_to_vec2<T: Clone>(ptr: DafnyArray2<T>) -> Vec<Vec<T>> {
+        Box::from_raw(ptr).to_vec2()
     }
 
     pub fn dafny_int_to_bigint(i: &DafnyInt) -> BigInt {
@@ -571,9 +582,9 @@ where T: DafnyType {
               // The length of the elements
               Rc::clone(values),
             Sequence::ConcatSequence { length, boxed, left, right } => {
-                let clone_boxed = boxed.as_ref().clone();
-                let clone_boxed_borrowed = clone_boxed.borrow();
-                let borrowed: Option<&Rc<Vec<T>>> = clone_boxed_borrowed.as_ref();
+                let into_boxed = boxed.as_ref().clone();
+                let into_boxed_borrowed = into_boxed.borrow();
+                let borrowed: Option<&Rc<Vec<T>>> = into_boxed_borrowed.as_ref();
                 if let Some(cache) = borrowed.as_ref() {
                     return Rc::clone(cache);
                 }
@@ -604,9 +615,9 @@ where T: DafnyType {
             Sequence::ConcatSequence { boxed, left, right, .. } =>
               // Let's create an array of size length and fill it up recursively
               {
-                let clone_boxed = boxed.as_ref().clone();
-                let clone_boxed_borrowed = clone_boxed.borrow();
-                let borrowed: Option<&Rc<Vec<T>>> = clone_boxed_borrowed.as_ref();
+                let into_boxed = boxed.as_ref().clone();
+                let into_boxed_borrowed = into_boxed.borrow();
+                let borrowed: Option<&Rc<Vec<T>>> = into_boxed_borrowed.as_ref();
                 if let Some(values) = borrowed.as_ref() {
                     for value in values.iter() {
                         array.push(value.clone());
@@ -1635,7 +1646,7 @@ pub struct IntegerRange<A: Add<Output = A> + One + Ord + Clone> {
 impl <A: Add<Output = A> + One + Ord + Clone> Iterator for IntegerRange<A> {
     type Item = A;
 
-        fn next(&mut self) -> Option<Self::Item> {
+    fn next(&mut self) -> Option<Self::Item> {
         if self.current < self.hi {
             let result = self.current.clone();
             self.current = self.current.clone() + One::one();
@@ -2183,7 +2194,7 @@ pub struct Array2<T>{
     length1: usize,
     data: Box<[Box<[T]>]>
 }
-impl <T> Array2<T> {
+impl <T: Clone> Array2<T> {
     #[inline]
     pub fn length0(&self) -> DafnyInt {
         DafnyInt::from(self.length0_usize())
@@ -2216,6 +2227,15 @@ impl <T> Array2<T> {
     // Once all the elements have been initialized, transform the signature of the pointer
     pub fn construct(p: *mut Array2<MaybeUninit<T>>) -> *mut Array2<T> {
         unsafe {std::mem::transmute(p)}
+    }
+
+    // Needs to test
+    pub fn to_vec2(self) -> Vec<Vec<T>> {
+        let mut v = Vec::new();
+        for i in 0..self.length0_usize() {
+            v.push(self.data[i].to_vec());
+        }
+        v
     }
 }
 
@@ -2273,9 +2293,7 @@ impl <T> Array3<T> {
 
 pub mod array {
     use std::{
-        boxed::Box,
-        rc::Rc,
-        vec::Vec,
+        alloc::Layout, boxed::Box, rc::Rc, vec::Vec
     };
     use num::ToPrimitive;
     use super::DafnyInt;
@@ -2287,6 +2305,9 @@ pub mod array {
     #[inline]
     pub fn from_vec<T>(v: Vec<T>) -> *mut [T] {
         from_native(v.into_boxed_slice())
+    }
+    pub fn to_vec<T>(v: *mut [T]) -> Vec<T> {
+        unsafe { Box::from_raw(v) }.into_vec()
     }
     pub fn initialize_usize<T>(n: usize, initializer: Rc<dyn Fn(usize) -> T>) -> *mut [T] {
         let mut v = Vec::with_capacity(n);
@@ -2311,11 +2332,11 @@ pub mod array {
         placebos_box_usize(n.to_usize().unwrap())
     }
     pub fn placebos_box_usize<T>(n_usize: usize) -> Box<[MaybeUninit<T>]> {
-        let mut v = Vec::with_capacity(n_usize);
-        for _i in 0..n_usize {
-            v.push(MaybeUninit::<T>::uninit());
-        }
-        v.into_boxed_slice()
+        // This code is optimized to take a constant time. See:
+        // https://users.rust-lang.org/t/allocate-a-boxed-array-of-maybeuninit/110169/7
+        std::iter::repeat_with(MaybeUninit::uninit)
+        .take(n_usize)
+        .collect()
     }
 
     pub fn initialize<T>(n: &DafnyInt, initializer: Rc<dyn Fn(&DafnyInt) -> T>) -> *mut [T] {
@@ -2402,14 +2423,33 @@ pub trait BoundedPool<T: 'static> {
     // Takes ownership of the function because otherwise it's hard to
     // generate code to create a function and borrow it immediately
     // without assigning it to a variable first
-    fn forall(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool;
-    fn exists(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool;
-    fn clone_box(&self) -> Box<dyn BoundedPool<T>>;
-    fn filter<'a>(&self, f: Rc<dyn Fn(&T) -> bool>) -> Box<dyn BoundedPool<T>> {
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&T) -> bool>) -> bool;
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<T>>;
+    fn filter<'a>(self: Box<Self>, f: Rc<dyn Fn(&T) -> bool>) -> Box<dyn BoundedPool<T>> {
         Box::new(FilterPool::<T> {
-            b: self.clone_box(),
+            b: self.into_box(),
             filterer: f,
         })
+    }
+    fn forall(self: Box<Self>, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        self.quantifier(true, f)
+    }
+    fn exists(self: Box<Self>, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        self.quantifier(false, f)
+    }
+}
+
+impl <T:'static, W: 'static> BoundedPool<T> for W 
+  where W: Iterator<Item = T> {
+    fn quantifier(mut self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        if is_forall {
+            self.all(|x| f(&x))
+        } else {
+            self.any(|x| f(&x))
+        }
+    }
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<T>> {
+        Box::new(*self)
     }
 }
 
@@ -2418,20 +2458,30 @@ pub struct FilterPool<T>{
     filterer: Rc<dyn Fn(&T) -> bool>
 }
 impl <T: 'static> BoundedPool<T> for FilterPool<T> {
-    fn forall(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool {
-        let filterer = self.filterer.clone();
-        self.b.forall(Rc::new(move |x: &T| !filterer.as_ref()(x) || f(x)))
-    }
-    fn exists(&self, f: Rc<dyn Fn(&T) -> bool>) -> bool {
-        let filterer = self.filterer.clone();
-        self.b.exists(Rc::new(move |x: &T| filterer.as_ref()(x) && f(x)))
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        let filterer = self.filterer;
+        if is_forall {
+          self.b.quantifier(is_forall, Rc::new(move |x: &T| !filterer.as_ref()(x) || f(x)))
+        } else {
+          self.b.quantifier(is_forall, Rc::new(move |x: &T| filterer.as_ref()(x) && f(x)))
+        }
     }
     
-    fn clone_box(&self) -> Box<dyn BoundedPool<T>> {
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<T>> {
         Box::new(FilterPool::<T> {
-            b: self.b.clone_box(),
-            filterer: self.filterer.clone(),
+            b: self.b.into_box(),
+            filterer: self.filterer,
         })
+    }
+}
+
+pub struct ExactPool<T>(T);
+impl<T: 'static> BoundedPool<T> for ExactPool<T> {
+    fn quantifier(self: Box<Self>, _is_forall: bool, f: Rc<dyn Fn(&T) -> bool>) -> bool {
+        f(&self.0)
+    }
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<T>> {
+        Box::new(*self)
     }
 }
 
@@ -2444,84 +2494,86 @@ impl Range {
 }
 
 impl BoundedPool<DafnyInt> for Range {
-    fn forall(&self, f: Rc<dyn Fn(&DafnyInt) -> bool>) -> bool {
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&DafnyInt) -> bool>) -> bool {
         let mut i: DafnyInt = self.0.clone();
         while i < self.1.clone() {
-            if !f(&i) {
-                return false;
+            if !f(&i) == is_forall {
+                return !is_forall;
             }
             i = i + int!(1);
         }
-        true
-    }
-    fn exists(&self, f: Rc<dyn Fn(&DafnyInt) -> bool>) -> bool {
-        let mut i: DafnyInt = self.0.clone();
-        while i < self.1.clone() {
-            if f(&i) {
-                return true;
-            }
-            i = i + int!(1);
-        }
-        false
+        is_forall
     }
     
-    fn clone_box(&self) -> Box<dyn BoundedPool<DafnyInt>> {
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<DafnyInt>> {
         Box::new(Range(self.0.clone(), self.1.clone()))
     }
 }
 
 impl <V: DafnyTypeEq> BoundedPool<V> for Sequence<V> {
-    fn forall(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&V) -> bool>) -> bool {
         let a = self.to_array();
         let col = a.iter();
         for v in col {
-            if !f(v) {
-                return false;
+            if !f(v) == is_forall {
+                return !is_forall;
             }
         }
-        true
-    }
-    fn exists(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
-        let a = self.to_array();
-        let col = a.iter();
-        for v in col {
-            if f(v) {
-                return true;
-            }
-        }
-        false
+        is_forall
     }
     
-    fn clone_box(&self) -> Box<dyn BoundedPool<V>> {
-        todo!()
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<V>> {
+        Box::new(*self)
     }
 }
 
 impl <V: DafnyTypeEq> BoundedPool<V> for Set<V> {
-    fn forall(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&V) -> bool>) -> bool {
         let col = self.data.iter();
         for v in col {
-            if !f(v) {
-                return false;
+            if !f(v) == is_forall {
+                return !is_forall;
             }
         }
-        true
-    }
-    fn exists(&self, f: Rc<dyn Fn(&V) -> bool>) -> bool {
-        let col = self.data.iter();
-        for v in col {
-            if f(v) {
-                return true;
-            }
-        }
-        false
+        is_forall
     }
     
-    fn clone_box(&self) -> Box<dyn BoundedPool<V>> {
-        todo!()
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<V>> {
+        Box::new(*self)
     }
 }
 
+impl <V: DafnyTypeEq> BoundedPool<V> for Multiset<V> {
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&V) -> bool>) -> bool {
+        let col = self.data.iter();
+        for v in col {
+            if !f(v.0) == is_forall {
+                return !is_forall;
+            }
+        }
+        is_forall
+    }
+
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<V>> {
+        Box::new(*self)
+    }
+}
+
+impl <K: DafnyTypeEq, V: DafnyTypeEq> BoundedPool<K> for Map<K, V> {
+    fn quantifier(self: Box<Self>, is_forall: bool, f: Rc<dyn Fn(&K) -> bool>) -> bool {
+        let col = self.data.iter();
+        for v in col {
+            if !f(v.0) == is_forall {
+                return !is_forall;
+            }
+        }
+        is_forall
+    }
+
+    fn into_box(self: Box<Self>) -> Box<dyn BoundedPool<K>> {
+        Box::new(*self)
+    }
+}
 
 // Any Dafny trait must require classes extending it to have a method "as_any_mut"
 // that can convert the reference from that trait to a reference of Any
