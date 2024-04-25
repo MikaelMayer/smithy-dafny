@@ -1,14 +1,15 @@
 // Annotation to ignore the case of this module
+use crate::implementation_from_dafny::r#_Wrappers_Compile;
 #[allow(non_snake_case)]
-pub mod UTF8 {
-    use crate::implementation_from_dafny::r#_UTF8_Compile;
-    use crate::implementation_from_dafny::r#_Wrappers_Compile;
+// Implementation of the externs of the Dafny module "UTF8"
+use crate::implementation_from_dafny::UTF8;
 
+impl UTF8::_default {
     pub fn Encode(
         s: &::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
     ) -> ::std::rc::Rc<
         r#_Wrappers_Compile::Result<
-            r#_UTF8_Compile::ValidUTF8Bytes,
+            UTF8::ValidUTF8Bytes,
             ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
         >,
     > {
@@ -33,21 +34,21 @@ pub mod UTF8 {
                         surrogate = Some(c.0);
                         continue;
                     }
-                    return ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<r#_UTF8_Compile::ValidUTF8Bytes, ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Failure {
-            error: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(
-              &e.to_string())
-          });
+                    return ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<UTF8::ValidUTF8Bytes, ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Failure {
+        error: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(
+            &e.to_string())
+        });
                 }
             }
         }
         if let Some(s) = surrogate {
-            return ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<r#_UTF8_Compile::ValidUTF8Bytes, ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Failure {
-        error: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(
-          &format!("Surrogate pair missing: 0x{:04x}", s))
-      });
+            return ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<UTF8::ValidUTF8Bytes, ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Failure {
+    error: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(
+        &format!("Surrogate pair missing: 0x{:04x}", s))
+    });
         }
         ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<
-            r#_UTF8_Compile::ValidUTF8Bytes,
+            UTF8::ValidUTF8Bytes,
             ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
         >::Success {
             value: ::dafny_runtime::Sequence::from_array_owned(_accumulator),
@@ -63,19 +64,19 @@ pub mod UTF8 {
     > {
         let b = String::from_utf8(b.to_array().as_ref().clone());
         match b {
-      Ok(s) => {
-        ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-          ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Success {
-            value: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(&s)
+    Ok(s) => {
+    ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
+        ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Success {
+        value: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(&s)
+    })
+    },
+    Err(e) => {
+    return ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
+        ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Failure {
+        error: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(
+            &e.to_string())
         })
-      },
-      Err(e) => {
-        return ::std::rc::Rc::new(r#_Wrappers_Compile::Result::<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-          ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Failure {
-            error: ::dafny_runtime::dafny_runtime_conversions::unicode_chars_false::string_to_dafny_string(
-              &e.to_string())
-          })
-      }
     }
+}
     }
 }

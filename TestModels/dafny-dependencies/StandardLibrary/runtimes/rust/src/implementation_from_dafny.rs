@@ -1,6 +1,5 @@
 #![allow(warnings, unconditional_panic)]
 #![allow(nonstandard_style)]
-extern crate dafny_runtime;
 pub mod _System {
     pub type nat = ::dafny_runtime::DafnyInt;
 
@@ -1260,7 +1259,7 @@ pub mod r#_StandardLibrary_Compile {
             s: &::dafny_runtime::Set<::dafny_runtime::Sequence<_T>>,
             less: &::std::rc::Rc<dyn::std::ops::Fn(&_T, &_T) -> bool>,
         ) -> bool {
-            s.contains(a) && ((s).iter().cloned()).all(({
+            s.contains(a) && s.iter().cloned().all(({
           let mut a = a.clone();
           let mut s = s.clone();
           let mut less = less.clone();
@@ -1294,68 +1293,44 @@ pub mod r#_StandardLibrary_Compile {
         }
     }
 }
-
-pub mod r#_UTF8_Compile {
-    use crate::UTF8;
-    use dafny_runtime::dafny_runtime_conversions;
-    use dafny_runtime::BigInt;
-    use dafny_runtime::ToPrimitive;
-
+pub mod UTF8 {
     pub struct _default {}
 
     impl _default {
         pub fn new() -> Self {
             _default {}
         }
-        pub fn Encode(
-            s: &::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-        ) -> ::std::rc::Rc<
-            super::r#_Wrappers_Compile::Result<
-                super::r#_UTF8_Compile::ValidUTF8Bytes,
-                ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-            >,
-        > {
-            UTF8::UTF8::Encode(s)
+        pub fn _allocated() -> *mut Self {
+            ::dafny_runtime::allocate::<Self>()
         }
-        pub fn Decode(
-            b: &::dafny_runtime::Sequence<u8>,
-        ) -> ::std::rc::Rc<
-            super::r#_Wrappers_Compile::Result<
-                ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-                ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-            >,
-        > {
-            UTF8::UTF8::Decode(b)
-        }
-
         pub fn CreateEncodeSuccess(
-            bytes: &super::r#_UTF8_Compile::ValidUTF8Bytes,
+            bytes: &super::UTF8::ValidUTF8Bytes,
         ) -> ::std::rc::Rc<
             super::r#_Wrappers_Compile::Result<
-                super::r#_UTF8_Compile::ValidUTF8Bytes,
+                super::UTF8::ValidUTF8Bytes,
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
             >,
         > {
             ::std::rc::Rc::new(super::r#_Wrappers_Compile::Result::<
-                super::r#_UTF8_Compile::ValidUTF8Bytes,
+                super::UTF8::ValidUTF8Bytes,
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
             >::Success {
-                value: (bytes.clone()),
+                value: bytes.clone(),
             })
         }
         pub fn CreateEncodeFailure(
             error: &::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
         ) -> ::std::rc::Rc<
             super::r#_Wrappers_Compile::Result<
-                super::r#_UTF8_Compile::ValidUTF8Bytes,
+                super::UTF8::ValidUTF8Bytes,
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
             >,
         > {
             ::std::rc::Rc::new(super::r#_Wrappers_Compile::Result::<
-                super::r#_UTF8_Compile::ValidUTF8Bytes,
+                super::UTF8::ValidUTF8Bytes,
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
             >::Failure {
-                error: (error.clone()),
+                error: error.clone(),
             })
         }
         pub fn CreateDecodeSuccess(
@@ -1370,7 +1345,7 @@ pub mod r#_UTF8_Compile {
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
             >::Success {
-                value: (s.clone()),
+                value: s.clone(),
             })
         }
         pub fn CreateDecodeFailure(
@@ -1385,91 +1360,102 @@ pub mod r#_UTF8_Compile {
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
                 ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
             >::Failure {
-                error: (error.clone()),
+                error: error.clone(),
             })
         }
         pub fn IsASCIIString(
             s: &::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
         ) -> bool {
-            true
+            let mut _hresult: bool = <bool as std::default::Default>::default();
+            let mut _hi0: ::dafny_runtime::DafnyInt = s.cardinality();
+            for i in ::dafny_runtime::integer_range(::dafny_runtime::int!(0), _hi0.clone()) {
+                if !(::dafny_runtime::int!(s.get(&i).0) < ::dafny_runtime::int!(128)) {
+                    _hresult = false;
+                    return _hresult;
+                }
+            }
+            _hresult = true;
+            return _hresult;
+            return _hresult;
         }
         pub fn EncodeAscii(
             s: &::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>,
-        ) -> super::r#_UTF8_Compile::ValidUTF8Bytes {
-            let mut _accumulator: super::r#_UTF8_Compile::ValidUTF8Bytes =
+        ) -> super::UTF8::ValidUTF8Bytes {
+            let mut _accumulator: super::UTF8::ValidUTF8Bytes =
                 ::dafny_runtime::seq![] as ::dafny_runtime::Sequence<u8>;
             let mut s = s.clone();
+            let mut _accumulator = _accumulator.clone();
             'TAIL_CALL_START: loop {
-                if s.cardinality() == ::dafny_runtime::DafnyInt::from(0) {
+                if s.cardinality() == ::dafny_runtime::int!(0) {
                     return _accumulator
                         .concat(&(::dafny_runtime::seq![] as ::dafny_runtime::Sequence<u8>));
                 } else {
-                    let mut x: ::dafny_runtime::Sequence<u8> = ::dafny_runtime::seq![0 as u8];
+                    let mut x: ::dafny_runtime::Sequence<u8> =
+                        ::dafny_runtime::seq![s.get(&::dafny_runtime::int!(0)).0 as u8];
                     _accumulator = _accumulator.concat(&x);
-                    let mut _in0: ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16> =
-                        s.drop(&::dafny_runtime::DafnyInt::from(1));
-                    s = _in0.clone();
+                    let mut _in11: ::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16> =
+                        s.drop(&::dafny_runtime::int!(1));
+                    s = _in11.clone();
                     continue 'TAIL_CALL_START;
                 }
             }
         }
         pub fn Uses1Byte(s: &::dafny_runtime::Sequence<u8>) -> bool {
-            (/*optimized*/0) <= s.get(&::dafny_runtime::DafnyInt::from(0))
-                && s.get(&::dafny_runtime::DafnyInt::from(0)) <= (/*optimized*/127)
+            0 <= s.get(&::dafny_runtime::int!(0)) && s.get(&::dafny_runtime::int!(0)) <= 127
         }
         pub fn Uses2Bytes(s: &::dafny_runtime::Sequence<u8>) -> bool {
-            (/*optimized*/194) <= s.get(&::dafny_runtime::DafnyInt::from(0))
-                && s.get(&::dafny_runtime::DafnyInt::from(0)) <= (/*optimized*/223)
-                && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                    && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/191))
+            194 <= s.get(&::dafny_runtime::int!(0))
+                && s.get(&::dafny_runtime::int!(0)) <= 223
+                && (128 <= s.get(&::dafny_runtime::int!(1))
+                    && s.get(&::dafny_runtime::int!(1)) <= 191)
         }
         pub fn Uses3Bytes(s: &::dafny_runtime::Sequence<u8>) -> bool {
-            s.get(&::dafny_runtime::DafnyInt::from(0)) == (/*optimized*/224)
-                && ((/*optimized*/160) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                    && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/191))
-                && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                    && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
-                || (/*optimized*/225) <= s.get(&::dafny_runtime::DafnyInt::from(0))
-                    && s.get(&::dafny_runtime::DafnyInt::from(0)) <= (/*optimized*/236)
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                        && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/191))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                        && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
-                || s.get(&::dafny_runtime::DafnyInt::from(0)) == (/*optimized*/237)
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                        && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/159))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                        && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
-                || (/*optimized*/238) <= s.get(&::dafny_runtime::DafnyInt::from(0))
-                    && s.get(&::dafny_runtime::DafnyInt::from(0)) <= (/*optimized*/239)
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                        && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/191))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                        && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
+            s.get(&::dafny_runtime::int!(0)) == 224
+                && (160 <= s.get(&::dafny_runtime::int!(1))
+                    && s.get(&::dafny_runtime::int!(1)) <= 191)
+                && (128 <= s.get(&::dafny_runtime::int!(2))
+                    && s.get(&::dafny_runtime::int!(2)) <= 191)
+                || 225 <= s.get(&::dafny_runtime::int!(0))
+                    && s.get(&::dafny_runtime::int!(0)) <= 236
+                    && (128 <= s.get(&::dafny_runtime::int!(1))
+                        && s.get(&::dafny_runtime::int!(1)) <= 191)
+                    && (128 <= s.get(&::dafny_runtime::int!(2))
+                        && s.get(&::dafny_runtime::int!(2)) <= 191)
+                || s.get(&::dafny_runtime::int!(0)) == 237
+                    && (128 <= s.get(&::dafny_runtime::int!(1))
+                        && s.get(&::dafny_runtime::int!(1)) <= 159)
+                    && (128 <= s.get(&::dafny_runtime::int!(2))
+                        && s.get(&::dafny_runtime::int!(2)) <= 191)
+                || 238 <= s.get(&::dafny_runtime::int!(0))
+                    && s.get(&::dafny_runtime::int!(0)) <= 239
+                    && (128 <= s.get(&::dafny_runtime::int!(1))
+                        && s.get(&::dafny_runtime::int!(1)) <= 191)
+                    && (128 <= s.get(&::dafny_runtime::int!(2))
+                        && s.get(&::dafny_runtime::int!(2)) <= 191)
         }
         pub fn Uses4Bytes(s: &::dafny_runtime::Sequence<u8>) -> bool {
-            s.get(&::dafny_runtime::DafnyInt::from(0)) == (/*optimized*/240)
-                && ((/*optimized*/144) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                    && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/191))
-                && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                    && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
-                && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(3))
-                    && s.get(&::dafny_runtime::DafnyInt::from(3)) <= (/*optimized*/191))
-                || (/*optimized*/241) <= s.get(&::dafny_runtime::DafnyInt::from(0))
-                    && s.get(&::dafny_runtime::DafnyInt::from(0)) <= (/*optimized*/243)
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                        && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/191))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                        && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(3))
-                        && s.get(&::dafny_runtime::DafnyInt::from(3)) <= (/*optimized*/191))
-                || s.get(&::dafny_runtime::DafnyInt::from(0)) == (/*optimized*/244)
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(1))
-                        && s.get(&::dafny_runtime::DafnyInt::from(1)) <= (/*optimized*/143))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(2))
-                        && s.get(&::dafny_runtime::DafnyInt::from(2)) <= (/*optimized*/191))
-                    && ((/*optimized*/128) <= s.get(&::dafny_runtime::DafnyInt::from(3))
-                        && s.get(&::dafny_runtime::DafnyInt::from(3)) <= (/*optimized*/191))
+            s.get(&::dafny_runtime::int!(0)) == 240
+                && (144 <= s.get(&::dafny_runtime::int!(1))
+                    && s.get(&::dafny_runtime::int!(1)) <= 191)
+                && (128 <= s.get(&::dafny_runtime::int!(2))
+                    && s.get(&::dafny_runtime::int!(2)) <= 191)
+                && (128 <= s.get(&::dafny_runtime::int!(3))
+                    && s.get(&::dafny_runtime::int!(3)) <= 191)
+                || 241 <= s.get(&::dafny_runtime::int!(0))
+                    && s.get(&::dafny_runtime::int!(0)) <= 243
+                    && (128 <= s.get(&::dafny_runtime::int!(1))
+                        && s.get(&::dafny_runtime::int!(1)) <= 191)
+                    && (128 <= s.get(&::dafny_runtime::int!(2))
+                        && s.get(&::dafny_runtime::int!(2)) <= 191)
+                    && (128 <= s.get(&::dafny_runtime::int!(3))
+                        && s.get(&::dafny_runtime::int!(3)) <= 191)
+                || s.get(&::dafny_runtime::int!(0)) == 244
+                    && (128 <= s.get(&::dafny_runtime::int!(1))
+                        && s.get(&::dafny_runtime::int!(1)) <= 143)
+                    && (128 <= s.get(&::dafny_runtime::int!(2))
+                        && s.get(&::dafny_runtime::int!(2)) <= 191)
+                    && (128 <= s.get(&::dafny_runtime::int!(3))
+                        && s.get(&::dafny_runtime::int!(3)) <= 191)
         }
         pub fn ValidUTF8Range(
             a: &::dafny_runtime::Sequence<u8>,
@@ -1484,50 +1470,50 @@ pub mod r#_UTF8_Compile {
                     return true;
                 } else {
                     let mut r: ::dafny_runtime::Sequence<u8> = a.slice(&lo, &hi);
-                    if <(super::r#_UTF8_Compile::_default)>::Uses1Byte(&r) {
-                        let mut _in1: ::dafny_runtime::Sequence<u8> = a.clone();
-                        let mut _in2: ::dafny_runtime::DafnyInt =
-                            lo.clone() + ::dafny_runtime::DafnyInt::from(1);
-                        let mut _in3: super::_System::nat = hi.clone();
-                        a = _in1.clone();
-                        lo = _in2.clone();
-                        hi = _in3.clone();
+                    if super::UTF8::_default::Uses1Byte(&r) {
+                        let mut _in12: ::dafny_runtime::Sequence<u8> = a.clone();
+                        let mut _in13: ::dafny_runtime::DafnyInt =
+                            lo.clone() + ::dafny_runtime::int!(1);
+                        let mut _in14: super::_System::nat = hi.clone();
+                        a = _in12.clone();
+                        lo = _in13.clone();
+                        hi = _in14.clone();
                         continue 'TAIL_CALL_START;
                     } else {
-                        if ::dafny_runtime::DafnyInt::from(2) <= r.cardinality()
-                            && <(super::r#_UTF8_Compile::_default)>::Uses2Bytes(&r)
+                        if ::dafny_runtime::int!(2) <= r.cardinality()
+                            && super::UTF8::_default::Uses2Bytes(&r)
                         {
-                            let mut _in4: ::dafny_runtime::Sequence<u8> = a.clone();
-                            let mut _in5: ::dafny_runtime::DafnyInt =
-                                lo.clone() + ::dafny_runtime::DafnyInt::from(2);
-                            let mut _in6: super::_System::nat = hi.clone();
-                            a = _in4.clone();
-                            lo = _in5.clone();
-                            hi = _in6.clone();
+                            let mut _in15: ::dafny_runtime::Sequence<u8> = a.clone();
+                            let mut _in16: ::dafny_runtime::DafnyInt =
+                                lo.clone() + ::dafny_runtime::int!(2);
+                            let mut _in17: super::_System::nat = hi.clone();
+                            a = _in15.clone();
+                            lo = _in16.clone();
+                            hi = _in17.clone();
                             continue 'TAIL_CALL_START;
                         } else {
-                            if ::dafny_runtime::DafnyInt::from(3) <= r.cardinality()
-                                && <(super::r#_UTF8_Compile::_default)>::Uses3Bytes(&r)
+                            if ::dafny_runtime::int!(3) <= r.cardinality()
+                                && super::UTF8::_default::Uses3Bytes(&r)
                             {
-                                let mut _in7: ::dafny_runtime::Sequence<u8> = a.clone();
-                                let mut _in8: ::dafny_runtime::DafnyInt =
-                                    lo.clone() + ::dafny_runtime::DafnyInt::from(3);
-                                let mut _in9: super::_System::nat = hi.clone();
-                                a = _in7.clone();
-                                lo = _in8.clone();
-                                hi = _in9.clone();
+                                let mut _in18: ::dafny_runtime::Sequence<u8> = a.clone();
+                                let mut _in19: ::dafny_runtime::DafnyInt =
+                                    lo.clone() + ::dafny_runtime::int!(3);
+                                let mut _in20: super::_System::nat = hi.clone();
+                                a = _in18.clone();
+                                lo = _in19.clone();
+                                hi = _in20.clone();
                                 continue 'TAIL_CALL_START;
                             } else {
-                                if ::dafny_runtime::DafnyInt::from(4) <= r.cardinality()
-                                    && <(super::r#_UTF8_Compile::_default)>::Uses4Bytes(&r)
+                                if ::dafny_runtime::int!(4) <= r.cardinality()
+                                    && super::UTF8::_default::Uses4Bytes(&r)
                                 {
-                                    let mut _in10: ::dafny_runtime::Sequence<u8> = a.clone();
-                                    let mut _in11: ::dafny_runtime::DafnyInt =
-                                        lo.clone() + ::dafny_runtime::DafnyInt::from(4);
-                                    let mut _in12: super::_System::nat = hi.clone();
-                                    a = _in10.clone();
-                                    lo = _in11.clone();
-                                    hi = _in12.clone();
+                                    let mut _in21: ::dafny_runtime::Sequence<u8> = a.clone();
+                                    let mut _in22: ::dafny_runtime::DafnyInt =
+                                        lo.clone() + ::dafny_runtime::int!(4);
+                                    let mut _in23: super::_System::nat = hi.clone();
+                                    a = _in21.clone();
+                                    lo = _in22.clone();
+                                    hi = _in23.clone();
                                     continue 'TAIL_CALL_START;
                                 } else {
                                     return false;
@@ -1539,11 +1525,7 @@ pub mod r#_UTF8_Compile {
             }
         }
         pub fn ValidUTF8Seq(s: &::dafny_runtime::Sequence<u8>) -> bool {
-            <(super::r#_UTF8_Compile::_default)>::ValidUTF8Range(
-                s,
-                &::dafny_runtime::DafnyInt::from(0),
-                &s.cardinality(),
-            )
+            super::UTF8::_default::ValidUTF8Range(s, &::dafny_runtime::int!(0), &s.cardinality())
         }
     }
 
@@ -1559,7 +1541,7 @@ pub mod r#_UTF8_Compile {
             _formatter: &mut ::std::fmt::Formatter,
             _in_seq: bool,
         ) -> std::fmt::Result {
-            write!(_formatter, "UTF8_Compile.__default")
+            write!(_formatter, "UTF8._default")
         }
     }
 
@@ -1570,6 +1552,10 @@ pub mod r#_UTF8_Compile {
     }
 
     pub type ValidUTF8Bytes = ::dafny_runtime::Sequence<u8>;
+
+    pub fn r#__init_ValidUTF8Bytes() -> ::dafny_runtime::Sequence<u8> {
+        ::dafny_runtime::seq![] as ::dafny_runtime::Sequence<u8>
+    }
 }
 pub mod r#_StandardLibraryInterop_Compile {
     pub struct WrappersInterop {}
