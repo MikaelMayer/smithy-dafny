@@ -18,7 +18,7 @@ mod SimpleStringImplTest {
   fn GetString() {
     let _r =
       implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny::_default::SimpleString(
-        &::std::rc::Rc::new(implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny::_default::DefaultSimpleStringConfig())
+        &implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny::_default::DefaultSimpleStringConfig()
       );
     assert!(!_r.IsFailure());
     let client = _r.Extract();
