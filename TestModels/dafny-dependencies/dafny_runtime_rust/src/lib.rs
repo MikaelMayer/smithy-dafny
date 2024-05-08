@@ -31,9 +31,9 @@ pub use std::convert::Into;
 // An atomic box is just a RefCell in Rust
 pub type SizeT = usize;
 
-pub trait DafnyType: Clone + DafnyPrint + 'static + core::fmt::Debug {}
+pub trait DafnyType: Clone + DafnyPrint + 'static {}
 
-impl<T> DafnyType for T where T: Clone + DafnyPrint + 'static + core::fmt::Debug {}
+impl<T> DafnyType for T where T: Clone + DafnyPrint + 'static {}
 pub trait DafnyTypeEq: DafnyType + Hash + Eq {}
 
 impl<T> DafnyTypeEq for T where T: DafnyType + Hash + Eq {}
@@ -3051,6 +3051,7 @@ macro_rules! UpcastTo {
         }
     };
 }
+
 impl<From, To> UpcastTo<::std::rc::Rc<To>> for ::std::rc::Rc<From>
   where
     From: ?Sized + core::marker::Unsize<To>,
