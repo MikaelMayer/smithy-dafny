@@ -1,3 +1,6 @@
+
+#![feature(unsize)]
+
 #[cfg(test)]
 mod tests;
 pub use mem::MaybeUninit;
@@ -28,9 +31,9 @@ pub use std::convert::Into;
 // An atomic box is just a RefCell in Rust
 pub type SizeT = usize;
 
-pub trait DafnyType: Clone + DafnyPrint + 'static {}
+pub trait DafnyType: Clone + DafnyPrint + 'static + core::fmt::Debug {}
 
-impl<T> DafnyType for T where T: Clone + DafnyPrint + 'static {}
+impl<T> DafnyType for T where T: Clone + DafnyPrint + 'static + core::fmt::Debug {}
 pub trait DafnyTypeEq: DafnyType + Hash + Eq {}
 
 impl<T> DafnyTypeEq for T where T: DafnyType + Hash + Eq {}
@@ -2481,7 +2484,7 @@ pub mod array {
     use super::DafnyInt;
     use num::ToPrimitive;
     use std::mem::MaybeUninit;
-    use std::{alloc::Layout, boxed::Box, rc::Rc, vec::Vec};
+    use std::{boxed::Box, rc::Rc, vec::Vec};
     #[inline]
     pub fn from_native<T>(v: Box<[T]>) -> *mut [T] {
         Box::into_raw(v)
@@ -2731,7 +2734,49 @@ macro_rules! update_field_if_uninit {
 // Reference-counted classes mode
 /////////////////
 
-pub type Object<T> = Option<rcmut::RcMut<T>>;
+pub struct Object<T: ?Sized>(pub Option<rcmut::RcMut<T>>);
+
+impl<T: ?Sized> Clone for Object<T> {
+    fn clone(&self) -> Self {
+        Object(self.0.clone())
+    }
+}
+
+impl<T: ?Sized> Debug for Object<T> {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        self.fmt_print(f, false)
+    }
+}
+impl <T: ?Sized> DafnyPrint for Object<T> {
+    fn fmt_print(&self, f: &mut Formatter<'_>, _in_seq: bool) -> std::fmt::Result {
+        write!(f, "<object>")
+    }
+}
+
+impl <T: ?Sized> PartialEq for Object<T> {
+    fn eq(&self, other: &Self) -> bool {
+        if let Some(p) = &self.0 {
+            if let Some(q) = &other.0 {
+                // TODO: Can we really pointer equality between objects?
+                ::std::ptr::eq(p.as_ref().get(), q.as_ref().get())
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
+}
+
+impl <T: ?Sized> std::hash::Hash for Object<T> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        if let Some(p) = &self.0 {
+            p.as_ref().get().hash(state);
+        } else {
+            0.hash(state);
+        }
+    }
+}
 
 #[macro_export]
 macro_rules! cast_object {
@@ -2753,7 +2798,7 @@ pub fn allocate_rcmut<T>() -> Object<T> {
 pub fn is_instance_of_rcmut<T: ?Sized + AsAny + 'static, U: 'static>(theobject: Object<T>) -> bool {
     // safety: Dafny won't call this function unless it can guarantee the object is still allocated
     unsafe { 
-        rcmut::borrow(&theobject.unwrap()).as_any().downcast_ref::<U>().is_some()
+        rcmut::borrow(&theobject.0.unwrap()).as_any().downcast_ref::<U>().is_some()
     }
 }
 
@@ -2761,7 +2806,7 @@ pub fn is_instance_of_rcmut<T: ?Sized + AsAny + 'static, U: 'static>(theobject: 
 #[macro_export]
 macro_rules! update_field_nodrop_rcmut {
     ($ptr:expr, $field: ident, $value:expr) => {
-        update_nodrop_rcmut!((rcmut::borrow_mut(&mut $ptr.clone().unwrap())).$field, $value)
+        $crate::update_nodrop_rcmut!(($crate::rcmut::borrow_mut(&mut $ptr.0.clone().unwrap())).$field, $value)
     };
 }
 
@@ -2779,7 +2824,7 @@ macro_rules! update_field_if_uninit_rcmut {
     ($t:expr, $field:ident, $field_assigned:expr, $value:expr) => {{
         let computed_value = $value;
         if !$field_assigned {
-            update_field_nodrop_rcmut!($t, $field, computed_value);
+            $crate::update_field_nodrop_rcmut!($t, $field, computed_value);
             $field_assigned = true;
         }
     }};
@@ -2793,7 +2838,7 @@ macro_rules! update_field_uninit_rcmut {
         if $field_assigned {
             $crate::md!($t).$field = computed_value;
         } else {
-            update_field_nodrop_rcmut!($t, $field, computed_value);
+            $crate::update_field_nodrop_rcmut!($t, $field, computed_value);
             $field_assigned = true;
         }
     }};
@@ -2803,7 +2848,7 @@ macro_rules! update_field_uninit_rcmut {
 #[macro_export]
 macro_rules! md {
     ($x:expr) => {
-        unsafe { rcmut::borrow_mut(&mut $x.unwrap()) }
+        unsafe { $crate::rcmut::borrow_mut(&mut $x.0.unwrap()) }
     };
 }
 
@@ -2811,7 +2856,7 @@ macro_rules! md {
 #[macro_export]
 macro_rules! rd {
     ($x:expr) => {
-        unsafe { rcmut::borrow(& $x.unwrap()) }
+        unsafe { $crate::rcmut::borrow(& $x.0.unwrap()) }
     };
 }
 
@@ -2823,19 +2868,9 @@ macro_rules! refcount {
     };
 }
 
-impl<T: 'static> UpcastTo<Object<dyn Any>> for Object<T> {
-    fn upcast_to(&self) -> Object<dyn Any> {
-        if self.is_none() {
-            None
-        } else {
-            Some(self.clone().unwrap() as Rc<UnsafeCell<dyn Any>>)
-        }
-    }
-}
-
 pub mod object {
     pub fn new<T>(val: T) -> crate::Object<T> {
-        Some(crate::rcmut::new(val))
+        crate::Object(Some(crate::rcmut::new(val)))
     }
 }
 
@@ -2847,17 +2882,17 @@ pub mod rcmut {
     use std::sync::Arc;
 
     pub fn array_from_rc<T>(data: Rc<[T]>) -> crate::Object<[T]> {
-        Some(unsafe { crate::rcmut::from_rc(data) })
+        crate::Object(Some(unsafe { crate::rcmut::from_rc(data) }))
     }
     pub struct Array<T> {
         pub data: Box<[T]>,
     }
     impl<T> Array<T> {
         pub fn new(data: Box<[T]>) -> crate::Object<Array<T>> {
-            Some(crate::rcmut::new(Array { data }))
+            crate::Object(Some(crate::rcmut::new(Array { data })))
         }
 
-        pub fn placebos_usize(length: usize) -> Option<RcMut<Array<MaybeUninit<T>>>> {
+        pub fn placebos_usize(length: usize) -> crate::Object<Array<MaybeUninit<T>>> {
             let x = crate::array::placebos_box_usize::<T>(length);
             crate::rcmut::Array::<MaybeUninit<T>>::new(x)
         }
@@ -3001,8 +3036,9 @@ macro_rules! maybe_placebos_from {
 // Coercion
 ////////////////
 
-pub trait UpcastTo<U> {
-    fn upcast_to(&self) -> U;
+// To use this trait, one needs to clone the element before.
+pub trait UpcastTo<U>: Clone {
+    fn upcast_to(self) -> U;
 }
 
 #[macro_export]
@@ -3015,26 +3051,43 @@ macro_rules! UpcastTo {
         }
     };
 }
-
-// UpcastTo for pointers
-impl<T: 'static> UpcastTo<*mut dyn Any> for *mut T {
-    fn upcast_to(&self) -> *mut dyn Any {
-        (*self) as *const dyn Any as *mut dyn Any
+impl<From, To> UpcastTo<::std::rc::Rc<To>> for ::std::rc::Rc<From>
+  where
+    From: ?Sized + core::marker::Unsize<To>,
+    To: ?Sized,
+{
+    fn upcast_to(self) -> ::std::rc::Rc<To> {
+      self as ::std::rc::Rc<To>
     }
 }
 
-// UpcastTo for objects
 #[macro_export]
-macro_rules! UpcastToObject {
+macro_rules! UpcastToRc {
     ($from:ty, $to:ty) => {
-        impl $crate::UpcastTo<Object<$to>> for Object<$from> {
-            fn upcast_to(&self) -> Object<$to> {
-                Some((*self).clone().unwrap()as Rc<UnsafeCell<$to>>)
+        impl $crate::UpcastTo<::std::rc::Rc<$to>> for ::std::rc::Rc<$from> {
+            fn upcast_to(&self) -> ::std::rc::Rc<$to> {
+                (*self) as *const $to as *mut $to
             }
         }
     };
 }
 
+// UpcastTo for pointers
+impl<T: 'static> UpcastTo<*mut dyn Any> for *mut T {
+    fn upcast_to(self) -> *mut dyn Any {
+        self as *const dyn Any as *mut dyn Any
+    }
+}
+
+impl <From, To> UpcastTo<Object<To>> for Object<From>
+where
+    To: ?Sized,
+    Rc<From>: UpcastTo<Rc<To>>,
+{
+    fn upcast_to(self) -> Object<To> {
+        Object(Some(unsafe { rcmut::from_rc(rcmut::to_rc(self.0.clone().unwrap()).upcast_to()) }))
+    }
+}
 
 // UpcastTo for sets
 impl<V, U> UpcastTo<Set<V>> for Set<U>
@@ -3042,11 +3095,11 @@ where
     V: DafnyTypeEq,
     U: DafnyTypeEq + UpcastTo<V>,
 {
-    fn upcast_to(&self) -> Set<V> {
+    fn upcast_to(self) -> Set<V> {
         // We need to upcast individual elements
         let mut new_set: HashSet<V> = HashSet::<V>::default();
         for value in self.data.iter() {
-            new_set.insert(value.upcast_to());
+            new_set.insert(value.clone().upcast_to());
         }
         Set::from_hashset_owned(new_set)
     }
@@ -3058,11 +3111,11 @@ where
     V: DafnyTypeEq,
     U: DafnyTypeEq + UpcastTo<V>,
 {
-    fn upcast_to(&self) -> Sequence<V> {
+    fn upcast_to(self) -> Sequence<V> {
         // We need to upcast individual elements
         let mut new_seq: Vec<V> = Vec::<V>::default();
         for value in self.to_array().iter() {
-            new_seq.push(value.upcast_to());
+            new_seq.push(value.clone().upcast_to());
         }
         Sequence::from_array_owned(new_seq)
     }
@@ -3074,10 +3127,10 @@ where
     V: DafnyTypeEq,
     U: DafnyTypeEq + UpcastTo<V>,
 {
-    fn upcast_to(&self) -> Multiset<V> {
+    fn upcast_to(self) -> Multiset<V> {
         // We need to upcast individual elements
         let mut new_multiset: HashMap<V, DafnyInt> = HashMap::<V, DafnyInt>::default();
-        for (value, count) in self.data.iter() {
+        for (value, count) in self.data.into_iter() {
             new_multiset.insert(value.upcast_to(), count.clone());
         }
         Multiset::from_hashmap_owned(new_multiset)
@@ -3091,11 +3144,11 @@ where
     U: DafnyTypeEq + UpcastTo<V>,
     V: DafnyTypeEq,
 {
-    fn upcast_to(&self) -> Map<K, V> {
+    fn upcast_to(self) -> Map<K, V> {
         // We need to upcast individual elements
         let mut new_map: HashMap<K, V> = HashMap::<K, V>::default();
         for (key, value) in self.data.iter() {
-            new_map.insert(key.clone(), value.upcast_to());
+            new_map.insert(key.clone(), value.clone().upcast_to());
         }
         Map::from_hashmap_owned(new_map)
     }

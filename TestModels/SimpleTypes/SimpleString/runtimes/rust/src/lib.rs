@@ -5,7 +5,6 @@ pub mod implementation_from_dafny;
 #[cfg(test)]
 mod SimpleStringImplTest {
   use crate::implementation_from_dafny;
-  use crate::implementation_from_dafny::dafny_runtime;
   /*
   method{:test} GetString(){
         var client :- expect SimpleString.SimpleString();
@@ -23,9 +22,9 @@ mod SimpleStringImplTest {
       );
     assert!(!_r.IsFailure());
     let client = _r.Extract();
-    TestGetString(client);
-    TestGetStringSingleValue(client);
-    TestGetStringUTF8(client);
+    TestGetString(client.clone());
+    TestGetStringSingleValue(client.clone());
+    TestGetStringUTF8(client.clone());
   }
 
   /*method TestGetString(client: ISimpleTypesStringClient)
@@ -34,8 +33,8 @@ mod SimpleStringImplTest {
         expect ret.value.UnwrapOr("") == "TEST_SIMPLE_STRING_VALUE";
         print ret;
     } */
-  fn TestGetString(client: *mut dyn implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient) {
-    let _r = dafny_runtime::read!(client).GetString(
+  fn TestGetString(client: ::dafny_runtime::Object<dyn implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>) {
+    let _r = dafny_runtime::md!(client).GetString(
       &::std::rc::Rc::new(implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringInput::GetStringInput {
         value: ::std::rc::Rc::new(
             implementation_from_dafny::_Wrappers_Compile::Option::Some { value: dafny_runtime::string_utf16_of("TEST_SIMPLE_STRING_VALUE") })
@@ -47,8 +46,8 @@ mod SimpleStringImplTest {
     println!("{:?}", ret);
   }
 
-  fn TestGetStringSingleValue(client: *mut dyn implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient) {
-    let _r = dafny_runtime::read!(client).GetStringSingleValue(
+  fn TestGetStringSingleValue(client: ::dafny_runtime::Object<dyn implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>) {
+    let _r = ::dafny_runtime::md!(client.clone()).GetStringSingleValue(
       &::std::rc::Rc::new(implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringInput::GetStringInput {
         value: ::std::rc::Rc::new(
             implementation_from_dafny::_Wrappers_Compile::Option::Some { value: dafny_runtime::string_utf16_of("TEST_SIMPLE_STRING_SINGLE_VALUE") })
@@ -68,9 +67,9 @@ mod SimpleStringImplTest {
         expect ret.value.UnwrapOr("") == utf8EncodedString;
         print ret;
     }*/
-  fn TestGetStringUTF8(client: *mut dyn implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient) {
+  fn TestGetStringUTF8(client: ::dafny_runtime::Object<dyn implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>) {
     let utf8EncodedString = dafny_runtime::string_utf16_of("\u{0905}\u{0928}\u{093e}\u{0930}");
-    let _r = dafny_runtime::read!(client).GetStringUTF8(
+    let _r = dafny_runtime::md!(client).GetStringUTF8(
       &::std::rc::Rc::new(implementation_from_dafny::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringInput::GetStringInput {
         value: ::std::rc::Rc::new(
             implementation_from_dafny::_Wrappers_Compile::Option::Some { value: utf8EncodedString.clone() })
