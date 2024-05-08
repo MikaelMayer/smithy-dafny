@@ -1,6 +1,3 @@
-
-#![feature(unsize)]
-
 #[cfg(test)]
 mod tests;
 pub use mem::MaybeUninit;
@@ -2782,9 +2779,9 @@ impl <T: ?Sized> std::hash::Hash for Object<T> {
 macro_rules! cast_object {
     ($raw:expr, $id:ty) => {
         unsafe {
-            let res: Object<$id> = 
-            Some(Rc::from_raw(
-                Rc::into_raw($raw.unwrap()) as _));
+            let res: $crate::Object<$id> = 
+            $crate::Object(Some(::std::rc::Rc::from_raw(
+                ::std::rc::Rc::into_raw($raw.0.unwrap()) as _)));
             res
         }
     };
@@ -2864,7 +2861,7 @@ macro_rules! rd {
 #[macro_export]
 macro_rules! refcount {
     ($x:expr) => {
-        Rc::strong_count(unsafe { rcmut::as_rc(& $x.unwrap()) })
+        Rc::strong_count(unsafe { rcmut::as_rc(& $x.0.unwrap()) })
     };
 }
 
@@ -3044,21 +3041,24 @@ pub trait UpcastTo<U>: Clone {
 #[macro_export]
 macro_rules! UpcastTo {
     ($from:ty, $to:ty) => {
-        impl $crate::UpcastTo<*mut $to> for &mut $from {
-            fn upcast_to(&self) -> *mut $to {
-                (*self) as *const $to as *mut $to
+        impl $crate::UpcastTo<*mut $to> for & $from {
+            fn upcast_to(self) -> *mut $to {
+                self as *const $to as *mut $to
             }
         }
     };
 }
-
-impl<From, To> UpcastTo<::std::rc::Rc<To>> for ::std::rc::Rc<From>
-  where
-    From: ?Sized + core::marker::Unsize<To>,
-    To: ?Sized,
-{
-    fn upcast_to(self) -> ::std::rc::Rc<To> {
-      self as ::std::rc::Rc<To>
+use nightly_crimes::nightly_crimes;
+nightly_crimes! {
+    #![feature(unsize)]
+    impl<From, To> UpcastTo<::std::rc::Rc<To>> for ::std::rc::Rc<From>
+    where
+        From: ?Sized + core::marker::Unsize<To>,
+        To: ?Sized,
+    {
+        fn upcast_to(self) -> ::std::rc::Rc<To> {
+        self as ::std::rc::Rc<To>
+        }
     }
 }
 
