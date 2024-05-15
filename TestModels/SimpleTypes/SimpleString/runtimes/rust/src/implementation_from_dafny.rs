@@ -2,9 +2,7 @@
 #![allow(nonstandard_style)]
 pub use dafny_standard_library::implementation_from_dafny::*;
 
-
 pub mod r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes {
-  /* datatype DafnyCallEvent<I, O> = DafnyCallEvent(input: I, output: O) */
   #[derive(PartialEq, Clone)]
   pub enum DafnyCallEvent<I: ::dafny_runtime::DafnyType, O: ::dafny_runtime::DafnyType> {
     DafnyCallEvent {
@@ -87,11 +85,6 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes {
     }
   }
 
-  /*
-   datatype GetStringInput = | GetStringInput (
-    nameonly value: Option<string> := Option.None
-  )
-  */
   #[derive(PartialEq, Clone)]
   pub enum GetStringInput {
     GetStringInput {
@@ -158,11 +151,6 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes {
     }
   }
 
-  
-  /*
-  datatype GetStringOutput = | GetStringOutput (
-  nameonly value: Option<string> := Option.None
-  ) */
   #[derive(PartialEq, Clone)]
   pub enum GetStringOutput {
     GetStringOutput {
@@ -229,10 +217,6 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes {
     }
   }
 
-  /*
-  datatype SimpleStringConfig = | SimpleStringConfig (
-  ) */
-
   #[derive(PartialEq, Clone)]
   pub enum SimpleStringConfig {
     SimpleStringConfig {}
@@ -290,35 +274,8 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes {
   pub struct ISimpleTypesStringClientCallHistory {}
 
   impl ISimpleTypesStringClientCallHistory {
-    pub fn new() -> Self {
-      ISimpleTypesStringClientCallHistory {}
-    }
-    pub fn _allocated() -> *mut Self {
-      ::dafny_runtime::allocate::<Self>()
-    }
-    pub fn _allocated_rcmut() -> ::dafny_runtime::Object<Self> {
+    pub fn _allocate_rcmut() -> ::dafny_runtime::Object<Self> {
       ::dafny_runtime::allocate_rcmut::<Self>()
-    }
-  }
-
-  impl ::std::default::Default
-    for ISimpleTypesStringClientCallHistory {
-    fn default() -> Self {
-      ISimpleTypesStringClientCallHistory::new()
-    }
-  }
-
-  impl ::dafny_runtime::DafnyPrint
-    for ISimpleTypesStringClientCallHistory {
-    fn fmt_print(&self, _formatter: &mut ::std::fmt::Formatter, _in_seq: bool) -> std::fmt::Result {
-      write!(_formatter, "r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes.ISimpleTypesStringClientCallHistory")
-    }
-  }
-
-  impl ::std::cmp::PartialEq
-    for ISimpleTypesStringClientCallHistory {
-    fn eq(&self, other: &Self) -> bool {
-      ::std::ptr::eq(self, other)
     }
   }
 
@@ -327,12 +284,7 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes {
     fn GetStringSingleValue(&mut self, input: &::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringInput>) -> ::std::rc::Rc<super::r#_Wrappers_Compile::Result<::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringOutput>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>>;
     fn GetStringUTF8(&mut self, input: &::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringInput>) -> ::std::rc::Rc<super::r#_Wrappers_Compile::Result<::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringOutput>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>>;
   }
- 
-  /*
-  datatype Error =
-  | CollectionOfErrors(list: seq<Error>, nameonly message: string)
-  | Opaque(obj: object)
-  */
+
   #[derive(PartialEq, Clone)]
   pub enum Error {
     CollectionOfErrors {
@@ -435,13 +387,7 @@ pub mod r#_SimpleStringImpl_Compile {
   pub struct _default {}
 
   impl _default {
-    pub fn new() -> Self {
-      _default {}
-    }
-    pub fn _allocated() -> *mut Self {
-      ::dafny_runtime::allocate::<Self>()
-    }
-    pub fn _allocated_rcmut() -> ::dafny_runtime::Object<Self> {
+    pub fn _allocate_rcmut() -> ::dafny_runtime::Object<Self> {
       ::dafny_runtime::allocate_rcmut::<Self>()
     }
     pub fn GetString(config: &::std::rc::Rc<super::r#_SimpleStringImpl_Compile::Config>, input: &::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringInput>) -> ::std::rc::Rc<super::r#_Wrappers_Compile::Result<::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::GetStringOutput>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>> {
@@ -494,27 +440,6 @@ pub mod r#_SimpleStringImpl_Compile {
             }));
       return output.read();
       return output.read();
-    }
-  }
-
-  impl ::std::default::Default
-    for _default {
-    fn default() -> Self {
-      _default::new()
-    }
-  }
-
-  impl ::dafny_runtime::DafnyPrint
-    for _default {
-    fn fmt_print(&self, _formatter: &mut ::std::fmt::Formatter, _in_seq: bool) -> std::fmt::Result {
-      write!(_formatter, "r#_SimpleStringImpl_Compile._default")
-    }
-  }
-
-  impl ::std::cmp::PartialEq
-    for _default {
-    fn eq(&self, other: &Self) -> bool {
-      ::std::ptr::eq(self, other)
     }
   }
 
@@ -572,39 +497,25 @@ pub mod r#_SimpleStringImpl_Compile {
     }
   }
 }
-// SimpleString
 pub mod r#_simple_dtypes_dsmithystring_dinternaldafny {
   pub struct _default {}
 
   impl _default {
-    pub fn new() -> Self {
-      _default {}
-    }
-    pub fn _allocated() -> *mut Self {
-      ::dafny_runtime::allocate::<Self>()
-    }
-    pub fn _allocated_rcmut() -> ::dafny_runtime::Object<Self> {
+    pub fn _allocate_rcmut() -> ::dafny_runtime::Object<Self> {
       ::dafny_runtime::allocate_rcmut::<Self>()
     }
     pub fn DefaultSimpleStringConfig() -> ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::SimpleStringConfig> {
       ::std::rc::Rc::new(super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::SimpleStringConfig::SimpleStringConfig {})
     }
-    /*method SimpleString(config: SimpleStringConfig)
-    returns (res: Result<ISimpleTypesStringClient, Error>) {
-      var client := new SimpleStringClient(Operations.Config);
-      return Success(client);
-    } */
     pub fn SimpleString(config: &::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::SimpleStringConfig>) -> ::std::rc::Rc<super::r#_Wrappers_Compile::Result<::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>> {
-      let mut res = ::dafny_runtime::MaybePlacebo::<::std::rc::Rc<super::r#_Wrappers_Compile::Result<_, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>>>::new();
-      let mut client: ::dafny_runtime::Object<super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient> = ::dafny_runtime::Object(None);
-      let mut _nw1: ::dafny_runtime::Object<super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient> = super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient::_allocated_rcmut();
-      super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient::_ctor(_nw1.clone(), &::std::rc::Rc::new(super::r#_SimpleStringImpl_Compile::Config::Config {}));
-      client = _nw1;
-      let v: ::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient> = <::dafny_runtime::Object<SimpleStringClient> as ::dafny_runtime::UpcastTo<::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>>>::upcast_to(client.clone());
-      // build a success
-      res = ::dafny_runtime::MaybePlacebo::from(::std::rc::Rc::new(super::r#_Wrappers_Compile::Result::<::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>::Success{
-        value: v
-      }));
+      let mut res = ::dafny_runtime::MaybePlacebo::<::std::rc::Rc<super::r#_Wrappers_Compile::Result<::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>>>::new();
+      let mut client = ::dafny_runtime::MaybePlacebo::<::dafny_runtime::Object<super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient>>::new();
+      let mut _nw0: ::dafny_runtime::Object<super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient> = super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient::_allocate_rcmut();
+      super::r#_simple_dtypes_dsmithystring_dinternaldafny::SimpleStringClient::_ctor(&_nw0, &::std::rc::Rc::new(super::r#_SimpleStringImpl_Compile::Config::Config {}));
+      client = ::dafny_runtime::MaybePlacebo::from(_nw0.clone());
+      res = ::dafny_runtime::MaybePlacebo::from(::std::rc::Rc::new(super::r#_Wrappers_Compile::Result::<::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>, ::std::rc::Rc<super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::Error>>::Success {
+              value: ::dafny_runtime::UpcastTo::<::dafny_runtime::Object<dyn super::r#_simple_dtypes_dsmithystring_dinternaldafny_dtypes::ISimpleTypesStringClient>>::upcast_to(client.read())
+            }));
       return res.read();
       return res.read();
     }
@@ -620,46 +531,17 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny {
     }
   }
 
-  impl ::std::default::Default
-    for _default {
-    fn default() -> Self {
-      _default::new()
-    }
-  }
-
-  impl ::dafny_runtime::DafnyPrint
-    for _default {
-    fn fmt_print(&self, _formatter: &mut ::std::fmt::Formatter, _in_seq: bool) -> std::fmt::Result {
-      write!(_formatter, "r#_simple_dtypes_dsmithystring_dinternaldafny._default")
-    }
-  }
-
-  impl ::std::cmp::PartialEq
-    for _default {
-    fn eq(&self, other: &Self) -> bool {
-      ::std::ptr::eq(self, other)
-    }
-  }
-
   pub struct SimpleStringClient {
     pub r#__i_config: ::std::rc::Rc<super::r#_SimpleStringImpl_Compile::Config>
   }
 
   impl SimpleStringClient {
-    pub fn new() -> Self {
-      SimpleStringClient {
-        r#__i_config: <::std::rc::Rc<super::r#_SimpleStringImpl_Compile::Config> as std::default::Default>::default()
-      }
-    }
-    pub fn _allocated_rcmut() -> ::dafny_runtime::Object<Self> {
+    pub fn _allocate_rcmut() -> ::dafny_runtime::Object<Self> {
       ::dafny_runtime::allocate_rcmut::<Self>()
     }
-    pub fn _allocated() -> *mut Self {
-      ::dafny_runtime::allocate::<Self>()
-    }
-    fn _ctor(this: ::dafny_runtime::Object<SimpleStringClient>, config: &::std::rc::Rc<super::r#_SimpleStringImpl_Compile::Config>) -> () {
+    pub fn _ctor(this: &::dafny_runtime::Object<Self>, config: &::std::rc::Rc<super::r#_SimpleStringImpl_Compile::Config>) -> () {
       let mut _set__i_config: bool = false;
-      ::dafny_runtime::update_field_uninit_rcmut!(this, r#__i_config, _set__i_config, config.clone());
+      ::dafny_runtime::update_field_uninit_rcmut!(this.clone(), r#__i_config, _set__i_config, config.clone());
       return ();
     }
     pub fn config(&self) -> ::std::rc::Rc<super::r#_SimpleStringImpl_Compile::Config> {
@@ -689,79 +571,6 @@ pub mod r#_simple_dtypes_dsmithystring_dinternaldafny {
       _out2 = ::dafny_runtime::MaybePlacebo::from(super::r#_SimpleStringImpl_Compile::_default::GetStringUTF8(&self.config(), input));
       output = ::dafny_runtime::MaybePlacebo::from(_out2.read());
       return output.read();
-    }
-  }
-
-  impl ::std::default::Default
-    for SimpleStringClient {
-    fn default() -> Self {
-      SimpleStringClient::new()
-    }
-  }
-
-  impl ::dafny_runtime::DafnyPrint
-    for SimpleStringClient {
-    fn fmt_print(&self, _formatter: &mut ::std::fmt::Formatter, _in_seq: bool) -> std::fmt::Result {
-      write!(_formatter, "r#_simple_dtypes_dsmithystring_dinternaldafny.SimpleStringClient")
-    }
-  }
-
-  impl ::std::cmp::PartialEq
-    for SimpleStringClient {
-    fn eq(&self, other: &Self) -> bool {
-      ::std::ptr::eq(self, other)
-    }
-  }
-}
-pub mod r#_StandardLibraryInterop_Compile {
-  pub struct WrappersInterop {}
-
-  impl WrappersInterop {
-    pub fn new() -> Self {
-      WrappersInterop {}
-    }
-    pub fn _allocated_rcmut() -> ::dafny_runtime::Object<Self> {      
-      ::dafny_runtime::allocate_rcmut::<Self>()         
-    }
-    pub fn _allocated() -> *mut Self {
-      ::dafny_runtime::allocate::<Self>()
-    }
-    pub fn CreateStringSome(s: &::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>) -> ::std::rc::Rc<super::r#_Wrappers_Compile::Option<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>> {
-      ::std::rc::Rc::new(super::r#_Wrappers_Compile::Option::<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::Some {
-          value: s.clone()
-        })
-    }
-    pub fn CreateStringNone() -> ::std::rc::Rc<super::r#_Wrappers_Compile::Option<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>> {
-      ::std::rc::Rc::new(super::r#_Wrappers_Compile::Option::<::dafny_runtime::Sequence<::dafny_runtime::DafnyCharUTF16>>::None {})
-    }
-    pub fn CreateBooleanSome(b: bool) -> ::std::rc::Rc<super::r#_Wrappers_Compile::Option<bool>> {
-      ::std::rc::Rc::new(super::r#_Wrappers_Compile::Option::<bool>::Some {
-          value: b
-        })
-    }
-    pub fn CreateBooleanNone() -> ::std::rc::Rc<super::r#_Wrappers_Compile::Option<bool>> {
-      ::std::rc::Rc::new(super::r#_Wrappers_Compile::Option::<bool>::None {})
-    }
-  }
-
-  impl ::std::default::Default
-    for WrappersInterop {
-    fn default() -> Self {
-      WrappersInterop::new()
-    }
-  }
-
-  impl ::dafny_runtime::DafnyPrint
-    for WrappersInterop {
-    fn fmt_print(&self, _formatter: &mut ::std::fmt::Formatter, _in_seq: bool) -> std::fmt::Result {
-      write!(_formatter, "r#_StandardLibraryInterop_Compile.WrappersInterop")
-    }
-  }
-
-  impl ::std::cmp::PartialEq
-    for WrappersInterop {
-    fn eq(&self, other: &Self) -> bool {
-      ::std::ptr::eq(self, other)
     }
   }
 }
